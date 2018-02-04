@@ -1,6 +1,6 @@
-module KrivineMachine where
+module KrivineMachine (run) where
 
-import LambdaCompiler
+import LambdaCompiler (CTerm (..), ParseError, compiledTerm, convertCTermToString)
 
 data Closure =
   Closure CTerm
@@ -41,24 +41,11 @@ sub _ []     = Nothing
 sub 1 (x:_)  = Just x
 sub i (_:xs) = sub (i - 1) xs
 
-completeEnvironment :: Int -> [Closure] -> [Closure]
-completeEnvironment 0 xs = xs
-completeEnvironment j xs = Closure (CVariable 1 j) [] : completeEnvironment (j - 1) xs
-
 close :: CTerm -> [Closure]
 close t = [Closure t []]
 
-currentTerm :: [Closure] -> CTerm
-currentTerm (Closure t _: _) = t
-
-state :: String -> Either String [Closure]
-state s =
-  case compiledTerm s of
-    Right t -> Right (close t)
-    Left cs -> Left cs
-
-environment :: [Closure] -> [[Closure]]
-environment (Closure _ e : _) = e
+initialState :: String -> Either ParseError [Closure]
+initialState = fmap close . compiledTerm
 
 krivineMachine :: [Closure] -> CTerm
 krivineMachine xs =
@@ -80,19 +67,11 @@ krivineMachine xs =
 apply :: CTerm -> [Closure] -> CTerm
 apply = foldl (\ t x -> CApplication t (krivineMachine [x]))
 
-computeCTerm :: CTerm -> CTerm
-computeCTerm = krivineMachine . close
-
-compute :: String -> String
-compute s =
-  case compiledTerm s of
-    Right _ ->
-      case state s of
-        Right t -> convertCTermToString (krivineMachine t)
-    Left cs -> cs
+compute :: String -> Either ParseError String
+compute = fmap (convertCTermToString . krivineMachine) . initialState
 
 run :: IO String
-run = getLine >>= \x -> return (compute x)
+run = (show . compute) <$> getLine
 
 ex1 :: String
 ex1 = "(\\xx)y"

@@ -1,9 +1,9 @@
 {-# LANGUAGE EmptyDataDecls #-}
-{-# LANGUAGE GADTs #-}
+{-# LANGUAGE GADTs          #-}
 
 module LambdaParser where
 
-import Control.Applicative (Alternative(..))
+import Control.Applicative (Alternative (..))
 import Parser
 
 newtype Var =
@@ -44,11 +44,13 @@ application = do
   t2 <- term
   return $ Application t1 t2
 
-lambdaTerm :: String -> Either String Term
-lambdaTerm cs =
+newtype ParseError = ParseError String deriving (Show)
+
+parseLambdaTerm :: String -> Either ParseError Term
+parseLambdaTerm cs =
   case parse term cs of
     [(t, [])] -> Right t
     [(_, cs')] ->
-      Left
+      Left $ ParseError
         ("Cannot parse: " ++ take (length cs - length cs') cs ++ " ^ " ++ cs')
-    _ -> Left ("Cannot parse " ++ cs)
+    _ -> Left $ ParseError ("Cannot parse " ++ cs)

@@ -1,6 +1,6 @@
-module LambdaCompiler where
+module LambdaCompiler (CTerm (..), compiledTerm, convertCTermToString, ParseError) where
 
-import LambdaParser
+import LambdaParser (ParseError, Term (..), Var (..), parseLambdaTerm)
 
 data CTerm
   = CVariable Int
@@ -19,22 +19,11 @@ normal t =
     Lambda 0 u -> normal u
     Lambda i u ->
       case normal u of
-        Constant (Var l) -> Lambda i (Constant (Var l))
-        CVariable i' n -> Lambda i (CVariable i' n)
+        Constant (Var l)  -> Lambda i (Constant (Var l))
+        CVariable i' n    -> Lambda i (CVariable i' n)
         CApplication v u' -> Lambda i (CApplication v u')
-        Lambda i' u' -> Lambda (i + i') u'
+        Lambda i' u'      -> Lambda (i + i') u'
     _ -> t
-
-replace :: CTerm -> String -> Int -> Int -> CTerm
-replace t l nu i =
-  case t of
-    CVariable nu i -> CVariable nu i
-    Constant (Var l') ->
-      if l == l'
-        then CVariable nu i
-        else Constant (Var l')
-    CApplication v u -> CApplication (replace v l nu i) (replace u l nu i)
-    Lambda j u -> Lambda j (replace u l (nu + 1) i)
 
 translateAux :: Term -> [[Var]] -> Int -> Int -> Bool -> CTerm
 translateAux t s nu i b =
@@ -58,32 +47,8 @@ translateAux t s nu i b =
 compile :: Term -> CTerm
 compile t = normal (translateAux t [] 0 0 False)
 
-compiledTerm :: String -> Either String CTerm
-compiledTerm cs =
-  case lambdaTerm cs of
-    Left cs' -> Left cs'
-    Right t -> Right (compile t)
-
-substitute :: CTerm -> Var -> CTerm -> CTerm
-substitute t (Var l) u =
-  case t of
-    CVariable _ _ -> t
-    Constant (Var c) ->
-      if l == c
-        then u
-        else t
-    CApplication u1 u2 ->
-      CApplication (substitute u1 (Var l) u) (substitute u2 (Var l) u)
-    Lambda i v -> Lambda i (substitute v (Var l) u)
-
-substituteTerm :: Term -> Var -> Term -> CTerm
-substituteTerm t x u = substitute (compile t) x (compile u)
-
-substitutelambda :: String -> Var -> String -> Either String CTerm
-substitutelambda cs v cs' =
-  case lambdaTerm cs of
-    Left l -> Left l
-    Right r -> fmap (substituteTerm r v) (lambdaTerm cs')
+compiledTerm :: String -> Either ParseError CTerm
+compiledTerm = fmap compile . parseLambdaTerm
 
 printvariable :: [Int] -> Int -> Int -> String
 printvariable l nu i =
@@ -107,12 +72,6 @@ printlambda l i =
   case i of
     0 -> ""
     _ -> printlambda l (i - 1) ++ "\\" ++ "x_" ++ show (sum l + i)
-
-substitution :: String -> String -> String -> String
-substitution cs v cs' =
-  case substitutelambda cs (Var v) cs' of
-    Left l -> l
-    Right t -> convertCTermToString t
 
 convertCTermToString :: CTerm -> String
 convertCTermToString t = convertCTermToStringaux t []

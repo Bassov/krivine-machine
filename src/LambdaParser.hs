@@ -6,9 +6,7 @@ module LambdaParser where
 import Control.Applicative (Alternative (..))
 import Parser
 
-newtype Var =
-  Var String
-  deriving (Show)
+type Var = String
 
 data Term
   = Variable Var
@@ -26,7 +24,7 @@ varName :: Parser Var
 varName = do
   sym <- alpha
   n <- many digit
-  return $ Var (sym : n)
+  return (sym : n)
 
 var :: Parser Term
 var = Variable <$> varName

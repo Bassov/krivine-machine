@@ -1,4 +1,8 @@
-module KrivineMachine (run) where
+module KrivineMachine
+       (
+         run
+       , compute
+       ) where
 
 import Data.Either (either)
 import LambdaCompiler (CTerm (..), ParseError, Strategy (..), compiledTerm)
@@ -70,12 +74,3 @@ compute = fmap krivineMachine . initialState
 
 run :: IO String
 run = (show . compute) <$> getLine
-
-ex1 :: String
-ex1 = "(\\xx)y"
-
-ex2 :: String
-ex2 = "(\\xy)(\\x(x)x)\\x(x)x"
-
-ex3 :: String
-ex3 = "\\f(\\x(f)(x)x)\\x(f)(x)x"

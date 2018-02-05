@@ -1,8 +1,8 @@
-name:                krivines-machine
+name:                krivine-machine
 version:             0.1.0.0
 -- synopsis:
 -- description:
-homepage:            https://github.com/bassov/krivines-machine#readme
+homepage:            https://github.com/bassov/krivine-machine#readme
 license:             BSD3
 license-file:        LICENSE
 author:              Basov Alexandr
@@ -22,23 +22,23 @@ library
   build-depends:       base >= 4.7 && < 5
   default-language:    Haskell2010
 
-executable krivines-machine-exe
+executable krivine-machine-exe
   hs-source-dirs:      app
   main-is:             Main.hs
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
   build-depends:       base
-                     , krivines-machine
+                     , krivine-machine
   default-language:    Haskell2010
 
-test-suite krivines-machine-test
+test-suite krivine-machine-test
   type:                exitcode-stdio-1.0
   hs-source-dirs:      test
   main-is:             Spec.hs
   build-depends:       base
-                     , krivines-machine
+                     , krivine-machine
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
   default-language:    Haskell2010
 
 source-repository head
   type:     git
-  location: https://github.com/bassov/krivines-machine
+  location: https://github.com/bassov/krivine-machine

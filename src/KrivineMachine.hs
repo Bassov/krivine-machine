@@ -5,7 +5,7 @@ module KrivineMachine
        ) where
 
 import Data.Either (either)
-import LambdaCompiler (CTerm (..), ParseError, Strategy (..), compiledTerm)
+import LambdaCompiler (CTerm (..), ParseError, compiledTerm)
 
 data Closure =
   Closure CTerm Env
@@ -25,7 +25,7 @@ krivine (Closure t e:s) =
       case subs nu i e of
         Just cl -> Right $ cl : s
         Nothing -> Right $ closure (CVariable nu i) : s
-    CApplication _ v u -> Right $ Closure v e : Closure u e : s
+    CApplication v u -> Right $ Closure v e : Closure u e : s
     Lambda i v ->
       case pops i s of
         (0, xs') -> Right $ Closure v (pushs i 1 s : e) : xs'
@@ -55,7 +55,7 @@ krivineMachine :: Stack -> CTerm
 krivineMachine = either left right . krivine where
   left (k, cl) = Lambda k (krivineMachine [cl])
 
-  right (cl:xs) =
+  right stack@(cl:xs) =
     case cl of
       Closure (Constant c) _ -> apply (Constant c) xs
       Closure (CVariable nu i) e ->
@@ -63,11 +63,11 @@ krivineMachine = either left right . krivine where
           [] ->
             case xs of
               [] -> CVariable nu i
-              _  -> apply (CVariable nu i) xs
-          _ -> krivineMachine (cl:xs)
-      _ -> krivineMachine (cl:xs)
+              _  -> apply (CVariable nu i) xs -- paralelization here
+          _ -> krivineMachine stack
+      _ -> krivineMachine stack
 
-  apply = foldr (\x t -> CApplication Seq t (krivineMachine [x]))
+  apply = foldr (\x t -> CApplication t (krivineMachine [x]))
 
 compute :: String -> Either ParseError CTerm
 compute = fmap krivineMachine . initialState

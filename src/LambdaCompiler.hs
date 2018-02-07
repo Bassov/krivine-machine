@@ -1,12 +1,12 @@
-module LambdaCompiler (CTerm (..), compiledTerm, ParseError, Strategy (..)) where
+module LambdaCompiler (CTerm (..), compiledTerm, ParseError) where
 
-import LambdaParser (ParseError, Strategy (..), Term (..), Var, parseLambdaTerm)
+import LambdaParser (ParseError, Term (..), Var, parseLambdaTerm)
 
 data CTerm
   = CVariable Int
               Int
   | Constant Var
-  | CApplication Strategy CTerm
+  | CApplication CTerm
                  CTerm
   | Lambda Int
            CTerm
@@ -15,7 +15,7 @@ instance Show CTerm where
   show t = showCTerm t []
 
 normal :: CTerm -> CTerm
-normal (CApplication s v u) = CApplication s (normal v) (normal u)
+normal (CApplication v u) = CApplication (normal v) (normal u)
 normal (Lambda 0 u) = normal u
 normal (Lambda i u) =
   case normal u of
@@ -34,8 +34,8 @@ translateAux t s nu i b =
             then CVariable (nu + 1) (length c + 1)
             else translateAux t (c : s') nu (i + 1) False
         []:s' -> translateAux t s' (nu + 1) 0 False
-    Application strat v u ->
-      CApplication strat (translateAux v s 0 0 False) (translateAux u s 0 0 False)
+    Application v u ->
+      CApplication (translateAux v s 0 0 False) (translateAux u s 0 0 False)
     Abstraction l u ->
       if b
         then case s of
@@ -51,7 +51,7 @@ showCTerm t l =
   case t of
     CVariable nu i -> showVariable nu i
     Constant c -> show c
-    CApplication _ v u ->
+    CApplication v u ->
       "(" ++ showCTerm v l ++ ")" ++ showCTerm u l
     Lambda i v -> showLambda i ++ showCTerm v (i : l)
   where

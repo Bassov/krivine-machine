@@ -9,31 +9,12 @@ data Term
   = Variable Var
   | Abstraction Var
                 Term
-  | Application Strategy Term
+  | Application Term
                 Term
   deriving (Show)
 
-data Strategy = Par | Seq deriving (Show)
-
-parTerm :: Parser Term
-parTerm = base <|> pTerm where
-  base :: Parser Term
-  base = do
-    v <- nestedIn "(" var ")"
-    t <- term
-    return $ Application Par v t
-
-  pTerm :: Parser Term
-  pTerm = do
-    t1 <- nestedIn "(" (base <|> pTerm) ")"
-    t2 <- term
-    return $ Application Par t1 t2
-
 term :: Parser Term
-term = parTerm <|> seqTerm
-
-seqTerm :: Parser Term
-seqTerm = abstraction <|> application <|> var
+term = abstraction <|> application <|> var
 
 varName :: Parser Var
 varName = do
@@ -55,7 +36,7 @@ application :: Parser Term
 application = do
   t1 <- nestedIn "(" term ")"
   t2 <- term
-  return $ Application Seq t1 t2
+  return $ Application t1 t2
 
 newtype ParseError = ParseError String deriving (Show)
 

@@ -19,7 +19,14 @@ library
                      , LambdaCompiler
                      , LambdaParser
                      , Parser
+                     , Krivine.Parallel
+                     , Krivine.Sequential
+  other-modules:       Krivine.Core
   build-depends:       base >= 4.7 && < 5
+                     , distributed-process
+                     , network-transport-tcp
+                     , binary
+                     , ilist
   default-language:    Haskell2010
 
 executable krivine-machine-exe

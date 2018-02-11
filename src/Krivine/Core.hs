@@ -1,15 +1,26 @@
-module KrivineMachine
-       (
-         run
-       , compute
+{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DeriveGeneric      #-}
+
+module Krivine.Core
+       ( CTerm (..)
+       , Stack
+       , Env
+       , Closure (..)
+       , ParseError
+       , krivine
+       , initialState
        ) where
 
-import Data.Either (either)
+import Data.Binary
+import Data.Typeable
+import GHC.Generics
 import LambdaCompiler (CTerm (..), ParseError, compiledTerm)
 
 data Closure =
   Closure CTerm Env
-  deriving (Show)
+  deriving (Show, Generic, Typeable)
+
+instance Binary Closure
 
 type Stack = [Closure]
 type Env = [[Closure]]
@@ -50,29 +61,3 @@ krivine (Closure t e:s) =
 initialState :: String -> Either ParseError Stack
 initialState = fmap close . compiledTerm where
   close t = [closure t]
-
-krivineMachine :: Stack -> CTerm
-krivineMachine = either left right . krivine where
-  left (k, cl) = Lambda k (krivineMachine [cl])
-
-  right stack@(cl:xs) =
-    case cl of
-      Closure (Constant c) _ -> apply (Constant c) xs
-      Closure (CVariable nu i) e ->
-        case e of
-          [] ->
-            case xs of
-              [] -> CVariable nu i
-              _  -> apply (CVariable nu i) xs -- paralelization here
-              -- use here parallelApply
-          _ -> krivineMachine stack
-      _ -> krivineMachine stack
-  -- parallelApply term stack = do
-  --
-  apply = foldl (\ t x -> CApplication t (krivineMachine [x]))
-
-compute :: String -> Either ParseError CTerm
-compute = fmap krivineMachine . initialState
-
-run :: IO String
-run = (show . compute) <$> getLine

@@ -22,7 +22,17 @@ computeTerm :: (ProcessId, String) -> Process ()
 computeTerm (sender, term) = send sender $ (show . compute) term
 
 receiveResult :: String -> Process ()
-receiveResult res = say $ "got: " ++ res
+receiveResult res = liftIO $ print $ "got: " ++ res
+
+mkProcess :: Process ProcessId
+mkProcess = spawnLocal $ receiveWait [match computeTerm]
+
+compute' :: String -> Process ()
+compute' t = do
+  self <- getSelfPid
+  c <- mkProcess
+  send c (self, t)
+  receiveWait [match receiveResult]
 
 main :: IO ()
 main = do
@@ -30,15 +40,5 @@ main = do
   Right t <- createTransport "127.0.0.1" "10501" g defaultTCPParameters
   node <- newLocalNode t initRemoteTable
   runProcess node $ do
-    computer <-
-      spawnLocal $
-      forever $
-      receiveWait [match computeTerm]
-    say "send some messages!"
-
-    self <- getSelfPid
-    send computer (self, ex1)
-    send computer (self, ex2)
-    -- send computer (self, ex3)
-
-    forever $ receiveWait [match receiveResult]
+    compute' ex1
+    compute' ex2

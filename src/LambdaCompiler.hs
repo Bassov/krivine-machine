@@ -1,5 +1,11 @@
+{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DeriveGeneric      #-}
+
 module LambdaCompiler (CTerm (..), compiledTerm, ParseError) where
 
+import Data.Binary
+import Data.Typeable
+import GHC.Generics
 import LambdaParser (ParseError, Term (..), Var, parseLambdaTerm)
 
 data CTerm
@@ -9,7 +15,9 @@ data CTerm
   | CApplication CTerm
                  CTerm
   | Lambda Int
-           CTerm
+           CTerm deriving (Generic, Typeable)
+
+instance Binary CTerm
 
 instance Show CTerm where
   show t = showCTerm t []

@@ -15,21 +15,30 @@ import Data.List (foldl')
 import Data.List.Index (imapM_, setAt)
 import Data.Maybe (fromMaybe)
 
+import Debug.Trace
+
+import Criterion.Main
+
 ex1 :: String
 ex1 = "(\\xx)y"
 
 ex2 :: String
-ex2 = "((x)(\\xx)z)y"
+ex2 = "(((x)(\\xx)(\\xx)(\\xx)(\\xx)(\\xx)(\\xx)(\\xx)(\\xx)(\\xx)(\\xx)(\\xx)(\\xx)(\\xx)(\\xx)z)(\\xx)(\\xx)(\\xx)(\\xx)(\\xx)(\\xx)(\\xx)(\\xx)(\\xx)(\\xx)(\\xx)(\\xx)(\\xx)(\\xx)z)(\\xx)(\\xx)(\\xx)(\\xx)(\\xx)(\\xx)(\\xx)(\\xx)(\\xx)(\\xx)(\\xx)(\\xx)(\\xx)(\\xx)z"
 
-runKrivine :: IO ()
-runKrivine = do
+runParallelKrivine :: IO ()
+runParallelKrivine = do
   let g "10501" = ("127.0.0.1", "10501")
   Right t <- createTransport "127.0.0.1" "10501" g defaultTCPParameters
   node <- newLocalNode t initRemoteTable
-  runProcess node $ do
-    compute' ex1
-    compute' ex2
-    die "zhopa"
+  runProcess node $
+    -- compute' ex1
+    -- compute' ex2
+    -- die "zhopa"
+      liftIO $ defaultMain [
+        bgroup "parallel" [ bench "1" $ whnf compute ex1
+                          , bench "2" $ whnf compute ex2
+                          ]
+        ]
 
 compute' :: String -> Process ()
 compute' t =
@@ -80,7 +89,7 @@ computeParalell' stack = do
     calculate :: Int -> Closure -> Process ()
     calculate index closure = do
       self <- getSelfPid
-      c <- mkProcess
+      c <- trace "parallel" spawnLocal $ receiveWait [match computeTerm]
       send c (self, index, closure)
 
     handleResult :: Ref -> Process ()
@@ -89,8 +98,8 @@ computeParalell' stack = do
       cur <- liftIO $ readIORef ref
       liftIO $ writeIORef ref (setAt index (Just term) cur)
 
-    mkProcess :: Process ProcessId
-    mkProcess = spawnLocal $ receiveWait [match computeTerm]
+    -- mkProcess :: Process ProcessId
+    -- mkProcess = (spawnLocal $ receiveWait [match computeTerm]
 
     computeTerm :: (ProcessId, Int, Closure) -> Process ()
     computeTerm (sender, index, closure) = do

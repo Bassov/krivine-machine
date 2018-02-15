@@ -1,3 +1,5 @@
+{-# LANGUAGE BangPatterns #-}
+
 module Krivine.Sequential where
 
 import Data.Either (either)
@@ -5,18 +7,28 @@ import Krivine.Core (CTerm (..), Closure (..), ParseError, Stack, initialState, 
 
 import Criterion.Main
 
-ex1 :: String
-ex1 = "(\\xx)y"
+import Data.List
+import Data.List.Index
+import Data.Time
 
-ex2 :: String
-ex2 = "(((x)(\\xx)(\\xx)(\\xx)(\\xx)(\\xx)(\\xx)(\\xx)(\\xx)(\\xx)(\\xx)(\\xx)(\\xx)(\\xx)(\\xx)z)(\\xx)(\\xx)(\\xx)(\\xx)(\\xx)(\\xx)(\\xx)(\\xx)(\\xx)(\\xx)(\\xx)(\\xx)(\\xx)(\\xx)z)(\\xx)(\\xx)(\\xx)(\\xx)(\\xx)(\\xx)(\\xx)(\\xx)(\\xx)(\\xx)(\\xx)(\\xx)(\\xx)(\\xx)z"
+-- runSequentialKrivine term =
+--   defaultMain [
+--         bgroup "sequential" [ bench "1" $ whnf compute term
+--                           ]
+--         ]
 
-runSequentialKrivine =
-  defaultMain [
-        bgroup "sequential" [ bench "1" $ whnf compute ex1
-                          , bench "2" $ whnf compute ex2
-                          ]
-        ]
+runSequentialKrivine :: [Stack] -> IO ()
+runSequentialKrivine = imapM_ calculate
+  where
+    calculate index stack = do
+      start <- getCurrentTime
+      print $ krivineMachine stack
+      end <- getCurrentTime
+      let res = "Amount of t's: "
+                  ++ show (index + 1)
+                  ++ ". Time to compute: "
+                  ++ show (diffUTCTime end start)
+      print res
 
 krivineMachine :: Stack -> CTerm
 krivineMachine = either left right . krivine where
@@ -33,7 +45,7 @@ krivineMachine = either left right . krivine where
               _  -> apply (CVariable nu i) xs
           _ -> krivineMachine stack
       _ -> krivineMachine stack
-  apply = foldl (\ t x -> CApplication t (krivineMachine [x]))
+  apply = foldl' (\ t x -> CApplication t (krivineMachine [x]))
 
 compute :: String -> Either ParseError CTerm
 compute = fmap krivineMachine . initialState

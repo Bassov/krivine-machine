@@ -1,32 +1,23 @@
-{-# LANGUAGE BangPatterns #-}
-
 module Krivine.Sequential where
 
 import Data.Either (either)
 import Krivine.Core (CTerm (..), Closure (..), ParseError, Stack, initialState, krivine)
 
-import Criterion.Main
-
 import Data.List
-import Data.List.Index
 import Data.Time
 
--- runSequentialKrivine term =
---   defaultMain [
---         bgroup "sequential" [ bench "1" $ whnf compute term
---                           ]
---         ]
+import Control.DeepSeq
 
 runSequentialKrivine :: [Stack] -> IO ()
-runSequentialKrivine = imapM_ calculate
+runSequentialKrivine = mapM_ calculate
   where
-    calculate index stack = do
+    calculate stack = do
       start <- getCurrentTime
-      print $ krivineMachine stack
-      end <- getCurrentTime
-      let res = "Amount of t's: "
-                  ++ show (index + 1)
-                  ++ ". Time to compute: "
+      let term =  krivineMachine stack
+      print $ length (show term)
+      -- print term
+      end <- term `deepseq` getCurrentTime
+      let res =  "Time to compute: "
                   ++ show (diffUTCTime end start)
       print res
 

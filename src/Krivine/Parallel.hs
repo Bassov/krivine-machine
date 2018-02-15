@@ -2,21 +2,18 @@ module Krivine.Parallel where
 
 import Krivine.Core (CTerm (..), Closure (..), ParseError, Stack, initialState, krivine)
 
-import Control.Distributed.Process (Process, ProcessId, die, getSelfPid, liftIO, match, receiveWait,
-                                    send, spawnLocal)
+import Control.DeepSeq
+import Control.Distributed.Process (Process, ProcessId, getSelfPid, liftIO, match, receiveWait,
+                                    spawnLocal, unsafeSend)
 import Control.Distributed.Process.Node (initRemoteTable, newLocalNode, runProcess)
-import Control.Monad (mapM_)
 
 import Network.Transport.TCP (createTransport, defaultTCPParameters)
 
 import Data.Either (either)
 import Data.IORef (IORef, newIORef, readIORef, writeIORef)
 import Data.List (foldl')
-import Data.List.Index (imapM, imapM_, setAt)
+import Data.List.Index (imapM_, setAt)
 import Data.Maybe (fromMaybe)
-
-import Debug.Trace
-
 import Data.Time
 
 runParallelKrivine :: [Stack] -> IO ()
@@ -24,18 +21,17 @@ runParallelKrivine stacks = do
     let g "10501" = ("127.0.0.1", "10501")
     Right t <- createTransport "127.0.0.1" "10501" g defaultTCPParameters
     node <- newLocalNode t initRemoteTable
-    runProcess node $ imapM_ calc stacks
+    runProcess node $ mapM_ calc stacks
   where
-    calc index stack = do
+    calc stack = do
       start <- liftIO getCurrentTime
 
       term <- krivineMachine stack
-      liftIO $ print term
+      liftIO $ print $ length (show term)
+      -- liftIO $ print term
 
-      end <- liftIO getCurrentTime
-      let res = "Amount of t's: "
-                  ++ show (index + 1)
-                  ++ ". Time to compute: "
+      end <- term `deepseq` liftIO getCurrentTime
+      let res =   "Time to compute: "
                   ++ show (diffUTCTime end start)
       liftIO $ print res
 
@@ -58,19 +54,35 @@ krivineMachine = either left right . krivine where
       Closure (Constant c) _ ->
         case xs of
           [] -> return $ Constant c
-          _  -> computeParallel (Constant c) xs
+          _  -> case length xs of
+            1 -> apply (Constant c) xs
+            _ -> computeParallel (Constant c) xs
       Closure (CVariable nu i) e ->
         case e of
           [] ->
             case xs of
               [] -> return $ CVariable nu i
-              _  -> computeParallel (CVariable nu i) xs
+              _  -> case length xs of
+                1 -> apply (CVariable nu i) xs
+                _ -> computeParallel (CVariable nu i) xs
           _ -> krivineMachine stack
       _ -> krivineMachine stack
 
+  apply :: CTerm -> Stack -> Process CTerm
+  apply t stack = do
+    computations <- mapM (\cl -> krivineMachine [cl]) stack
+    return $ foldl' CApplication t computations
+
 computeParallel :: CTerm -> Stack -> Process CTerm
 computeParallel t stack = do
+  liftIO $ print $ "start parallel, terms: " ++ show (length stack)
+  start <- liftIO getCurrentTime
+
   computations <- computeParalell' stack
+
+  end <- liftIO getCurrentTime
+  liftIO $ print $ "end parallel, time: " ++ show (diffUTCTime end start)
+
   return $ foldl' CApplication t computations
 
 type Ref = IORef [Maybe CTerm]
@@ -89,7 +101,7 @@ computeParalell' stack = do
     calculate index closure = do
       self <- getSelfPid
       pid <- spawnLocal $ receiveWait [match computeTerm]
-      send pid (self, index, closure)
+      unsafeSend pid (self, index, closure)
 
     handleResult :: Ref -> Process ()
     handleResult ref = do
@@ -100,7 +112,7 @@ computeParalell' stack = do
     computeTerm :: (ProcessId, Int, Closure) -> Process ()
     computeTerm (sender, index, closure) = do
       term <- krivineMachine [closure]
-      send sender (index, term)
+      unsafeSend sender (index, term)
 
 compute :: String -> Either ParseError (Process CTerm)
 compute = fmap krivineMachine . initialState

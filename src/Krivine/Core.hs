@@ -11,6 +11,7 @@ module Krivine.Core
        , initialState
        ) where
 
+import Control.DeepSeq
 import Data.Binary
 import Data.Typeable
 import GHC.Generics
@@ -21,6 +22,7 @@ data Closure =
   deriving (Show, Generic, Typeable)
 
 instance Binary Closure
+instance NFData CTerm
 
 type Stack = [Closure]
 type Env = [[Closure]]

@@ -25,11 +25,7 @@ runParallelKrivine stacks = do
   where
     calc (toCompute, stack) = do
       start <- liftIO getCurrentTime
-
       term <- krivineMachine stack
-      -- liftIO $ print $ length (show term)
-      -- liftIO $ print term
-
       end <- term `deepseq` liftIO getCurrentTime
       let res =   "Time to compute: "
                   ++ show (diffUTCTime end start)
@@ -76,14 +72,7 @@ krivineMachine = either left right . krivine where
 
 computeParallel :: CTerm -> Stack -> Process CTerm
 computeParallel t stack = do
-  -- liftIO $ print $ "start parallel, terms: " ++ show (length stack)
-  -- start <- liftIO getCurrentTime
-
   computations <- computeParalell' stack
-
-  -- end <- liftIO getCurrentTime
-  -- liftIO $ print $ "end parallel, time: " ++ show (diffUTCTime end start)
-
   return $ foldl' CApplication t computations
 
 type Ref = IORef [Maybe CTerm]

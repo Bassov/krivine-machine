@@ -14,8 +14,6 @@ runSequentialKrivine = mapM_ calculate
     calculate (toCompute, stack) = do
       start <- getCurrentTime
       let term =  krivineMachine stack
-      print $ length (show term)
-      -- print term
       end <- term `deepseq` getCurrentTime
       let res =  "Time to compute: "
                   ++ show (diffUTCTime end start)

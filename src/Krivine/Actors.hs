@@ -1,4 +1,4 @@
-module Krivine.Parallel where
+module Krivine.Actors where
 
 import Krivine.Core (CTerm (..), Closure (..), ParseError, Stack, initialState, krivine)
 
@@ -16,8 +16,8 @@ import Data.List.Index (imapM_, setAt)
 import Data.Maybe (fromMaybe)
 import Data.Time
 
-runParallelKrivine :: [(String, Stack)] -> IO ()
-runParallelKrivine stacks = do
+runActorsKrivine :: [(String, Stack)] -> IO ()
+runActorsKrivine stacks = do
     let g "10501" = ("127.0.0.1", "10501")
     Right t <- createTransport "127.0.0.1" "10501" g defaultTCPParameters
     node <- newLocalNode t initRemoteTable

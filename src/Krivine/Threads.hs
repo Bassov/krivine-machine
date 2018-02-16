@@ -1,4 +1,4 @@
-module Krivine.ParallelAsync where
+module Krivine.Threads where
 
 import Krivine.Core (CTerm (..), Closure (..), ParseError, Stack, initialState, krivine)
 
@@ -10,8 +10,8 @@ import Data.Either (either)
 import Data.List (foldl')
 import Data.Time
 
-runParallelAsyncKrivine :: [(String, Stack)] -> IO ()
-runParallelAsyncKrivine = mapM_ calc
+runThreadedKrivine :: [(String, Stack)] -> IO ()
+runThreadedKrivine = mapM_ calc
   where
     calc (toCompute, stack) = do
       start <- liftIO getCurrentTime

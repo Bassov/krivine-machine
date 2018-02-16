@@ -15,14 +15,13 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     KrivineMachine
-                     , LambdaCompiler
+  exposed-modules:     LambdaCompiler
                      , LambdaParser
                      , Parser
-                     , Krivine.Parallel
+                     , Krivine.Actors
                      , Krivine.Sequential
                      , Krivine.Core
-                     , Krivine.ParallelAsync
+                     , Krivine.Threads
   build-depends:       base >= 4.7 && < 6
                      , distributed-process
                      , network-transport-tcp

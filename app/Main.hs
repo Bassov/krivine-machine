@@ -1,9 +1,9 @@
 module Main where
 
+import Krivine.Actors
 import Krivine.Core
-import Krivine.Parallel
-import Krivine.ParallelAsync
 import Krivine.Sequential
+import Krivine.Threads
 
 import System.Random
 
@@ -91,21 +91,21 @@ main = do
       -- status "FINISH IDS SEQUENTIAL BENCHMARK"
 
 
-      -- status "START EXPONENTIAL PARALLEL BENCHMARK"
-      -- runParallelKrivine $ combine expExs (right expStacks)
-      -- status "FINISH EXPONENTIAL PARALLEL BENCHMARK"
+      -- status "START EXPONENTIAL ACTORS BENCHMARK"
+      -- runActorsKrivine $ combine expExs (right expStacks)
+      -- status "FINISH EXPONENTIAL ACTORS BENCHMARK"
 
       status "START IDS ACTORS BENCHMARK"
-      runParallelKrivine $ combine exs stacks
+      runActorsKrivine $ combine exs stacks
       status "FINISH IDS ACTORS BENCHMARK"
 
 
       -- status "START EXPONENTIAL THREADS BENCHMARK"
-      -- runParallelAsyncKrivine $ combine expExs (right expStacks)
+      -- runThreadedKrivine $ combine expExs (right expStacks)
       -- status "FINISH EXPONENTIAL THREADS BENCHMARK"
 
       -- status "START IDS THREADS BENCHMARK"
-      -- runParallelAsyncKrivine $ combine exs stacks
+      -- runThreadedKrivine $ combine exs stacks
       -- status "FINISH IDS THREADS BENCHMARK"
 
 

@@ -16,23 +16,24 @@ import Data.List.Index (imapM_, setAt)
 import Data.Maybe (fromMaybe)
 import Data.Time
 
-runParallelKrivine :: [Stack] -> IO ()
+runParallelKrivine :: [(String, Stack)] -> IO ()
 runParallelKrivine stacks = do
     let g "10501" = ("127.0.0.1", "10501")
     Right t <- createTransport "127.0.0.1" "10501" g defaultTCPParameters
     node <- newLocalNode t initRemoteTable
     runProcess node $ mapM_ calc stacks
   where
-    calc stack = do
+    calc (toCompute, stack) = do
       start <- liftIO getCurrentTime
 
       term <- krivineMachine stack
-      liftIO $ print $ length (show term)
+      -- liftIO $ print $ length (show term)
       -- liftIO $ print term
 
       end <- term `deepseq` liftIO getCurrentTime
       let res =   "Time to compute: "
                   ++ show (diffUTCTime end start)
+      liftIO $ print $ "Term: " ++ toCompute
       liftIO $ print res
 
 compute' :: String -> Process ()
@@ -51,12 +52,12 @@ krivineMachine = either left right . krivine where
 
   right stack@(cl:xs) =
     case cl of
-      Closure (Constant c) _ ->
+      Closure (FreeVariable c) _ ->
         case xs of
-          [] -> return $ Constant c
+          [] -> return $ FreeVariable c
           _  -> case length xs of
-            1 -> apply (Constant c) xs
-            _ -> computeParallel (Constant c) xs
+            1 -> apply (FreeVariable c) xs
+            _ -> computeParallel (FreeVariable c) xs
       Closure (CVariable nu i) e ->
         case e of
           [] ->
@@ -75,13 +76,13 @@ krivineMachine = either left right . krivine where
 
 computeParallel :: CTerm -> Stack -> Process CTerm
 computeParallel t stack = do
-  liftIO $ print $ "start parallel, terms: " ++ show (length stack)
-  start <- liftIO getCurrentTime
+  -- liftIO $ print $ "start parallel, terms: " ++ show (length stack)
+  -- start <- liftIO getCurrentTime
 
   computations <- computeParalell' stack
 
-  end <- liftIO getCurrentTime
-  liftIO $ print $ "end parallel, time: " ++ show (diffUTCTime end start)
+  -- end <- liftIO getCurrentTime
+  -- liftIO $ print $ "end parallel, time: " ++ show (diffUTCTime end start)
 
   return $ foldl' CApplication t computations
 

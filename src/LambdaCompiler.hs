@@ -11,7 +11,7 @@ import LambdaParser (ParseError, Term (..), Var, parseLambdaTerm)
 data CTerm
   = CVariable Int
               Int
-  | Constant Var
+  | FreeVariable Var
   | CApplication CTerm
                  CTerm
   | Lambda Int
@@ -36,7 +36,7 @@ translateAux t s nu i b =
   case t of
     Variable l ->
       case s of
-        [] -> Constant l
+        [] -> FreeVariable l
         (l':c):s' ->
           if l == l'
             then CVariable (nu + 1) (length c + 1)
@@ -58,7 +58,7 @@ showCTerm :: CTerm -> [Int] -> String
 showCTerm t l =
   case t of
     CVariable nu i -> showVariable nu i
-    Constant c -> show c
+    FreeVariable c -> show c
     CApplication v u ->
       "(" ++ showCTerm v l ++ ")" ++ showCTerm u l
     Lambda i v -> showLambda i ++ showCTerm v (i : l)

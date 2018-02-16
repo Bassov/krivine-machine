@@ -33,7 +33,7 @@ closure t = Closure t []
 krivine :: Stack -> Either (Int, Closure) Stack
 krivine (Closure t e:s) =
   case t of
-    Constant c -> Right $ closure (Constant c) : s
+    FreeVariable c -> Right $ closure (FreeVariable c) : s
     CVariable nu i ->
       case subs nu i e of
         Just cl -> Right $ cl : s

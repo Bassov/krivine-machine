@@ -8,10 +8,10 @@ import Data.Time
 
 import Control.DeepSeq
 
-runSequentialKrivine :: [Stack] -> IO ()
+runSequentialKrivine :: [(String, Stack)] -> IO ()
 runSequentialKrivine = mapM_ calculate
   where
-    calculate stack = do
+    calculate (toCompute, stack) = do
       start <- getCurrentTime
       let term =  krivineMachine stack
       print $ length (show term)
@@ -19,6 +19,7 @@ runSequentialKrivine = mapM_ calculate
       end <- term `deepseq` getCurrentTime
       let res =  "Time to compute: "
                   ++ show (diffUTCTime end start)
+      print $ "Term: " ++ toCompute
       print res
 
 krivineMachine :: Stack -> CTerm
@@ -27,7 +28,7 @@ krivineMachine = either left right . krivine where
 
   right stack@(cl:xs) =
     case cl of
-      Closure (Constant c) _ -> apply (Constant c) xs
+      Closure (FreeVariable c) _ -> apply (FreeVariable c) xs
       Closure (CVariable nu i) e ->
         case e of
           [] ->

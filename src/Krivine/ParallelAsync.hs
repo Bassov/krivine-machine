@@ -10,19 +10,20 @@ import Data.Either (either)
 import Data.List (foldl')
 import Data.Time
 
-runParallelAsyncKrivine :: [Stack] -> IO ()
+runParallelAsyncKrivine :: [(String, Stack)] -> IO ()
 runParallelAsyncKrivine = mapM_ calc
   where
-    calc stack = do
+    calc (toCompute, stack) = do
       start <- liftIO getCurrentTime
 
       term <- krivineMachine stack
-      liftIO $ print $ length (show term)
+      -- liftIO $ print $ length (show term)
       -- liftIO $ print term
 
       end <- term `deepseq` liftIO getCurrentTime
       let res = "Time to compute: "
                   ++ show (diffUTCTime end start)
+      liftIO $ print $ "Term: " ++ toCompute
       liftIO $ print res
 
 compute' :: String -> IO ()
@@ -41,12 +42,12 @@ krivineMachine = either left right . krivine where
 
   right stack@(cl:xs) =
     case cl of
-      Closure (Constant c) _ ->
+      Closure (FreeVariable c) _ ->
         case xs of
-          [] -> return $ Constant c
+          [] -> return $ FreeVariable c
           _  -> case length xs of
-            1 -> apply (Constant c) xs
-            _ -> computeParallel (Constant c) xs
+            1 -> apply (FreeVariable c) xs
+            _ -> computeParallel (FreeVariable c) xs
       Closure (CVariable nu i) e ->
         case e of
           [] ->
@@ -65,13 +66,13 @@ krivineMachine = either left right . krivine where
 
 computeParallel :: CTerm -> Stack -> IO CTerm
 computeParallel t stack = do
-  print $ "start parallel, terms: " ++ show (length stack)
-  start <- getCurrentTime
+  -- print $ "start parallel, terms: " ++ show (length stack)
+  -- start <- getCurrentTime
 
   computations <- computeParalell' stack
 
-  end <- liftIO getCurrentTime
-  print $ "end parallel, time: " ++ show (diffUTCTime end start)
+  -- end <- liftIO getCurrentTime
+  -- print $ "end parallel, time: " ++ show (diffUTCTime end start)
 
   return $ foldl' CApplication t computations
 

@@ -1,4 +1,5 @@
 # Krivine-Machine
+This project is a source code of machines described in this [paper](https://www.researchgate.net/publication/323258670_Implementing_distributed_l-calculus_interpreter)
 
 ## Building the project
 In order to build project [stack](https://docs.haskellstack.org/en/stable/README/)
